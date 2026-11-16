@@ -1,0 +1,6 @@
+[submodule "submodules/pspautotests"]
+	path = submodules/pspautotests
+	url = https://github.com/hrydgard/pspautotests
+[submodule "submodules/chipi-spec"]
+	path = submodules/chipi-spec
+	url = git@github.com:ioncodes/chipi-spec.git
