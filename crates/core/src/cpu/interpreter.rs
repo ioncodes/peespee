@@ -92,12 +92,17 @@ impl<M: crate::Memory> Ops for Interpreter<'_, M> {
             ArithKind::Sltiu => self
                 .cpu
                 .set_register(instr.rt(), u32::from(rs < instr.imm16() as u32)),
-            ArithKind::Max => todo!(),
-            ArithKind::Min => todo!(),
-            ArithKind::Movz => todo!(),
-            ArithKind::Movn => todo!(),
-            ArithKind::Clz => todo!(),
-            ArithKind::Clo => todo!(),
+            ArithKind::Max => self
+                .cpu
+                .set_register(instr.rd(), (rs as i32).max(rt as i32) as u32),
+            ArithKind::Min => self
+                .cpu
+                .set_register(instr.rd(), (rs as i32).min(rt as i32) as u32),
+            ArithKind::Movz if rt == 0 => self.cpu.set_register(instr.rd(), rs),
+            ArithKind::Movn if rt != 0 => self.cpu.set_register(instr.rd(), rs),
+            ArithKind::Movz | ArithKind::Movn => {}
+            ArithKind::Clz => self.cpu.set_register(instr.rd(), rs.leading_zeros()),
+            ArithKind::Clo => self.cpu.set_register(instr.rd(), rs.leading_ones()),
         }
     }
 
@@ -200,12 +205,8 @@ impl<M: crate::Memory> Ops for Interpreter<'_, M> {
         let rt = self.cpu.register(instr.rt());
 
         match op {
-            LoadStoreKind::Sb => self
-                .mmio
-                .write8(va, self.cpu.register(instr.rt()) as u8),
-            LoadStoreKind::Sh => self
-                .mmio
-                .write16(va, self.cpu.register(instr.rt()) as u16),
+            LoadStoreKind::Sb => self.mmio.write8(va, self.cpu.register(instr.rt()) as u8),
+            LoadStoreKind::Sh => self.mmio.write16(va, self.cpu.register(instr.rt()) as u16),
             LoadStoreKind::Sw => self.mmio.write32(va, self.cpu.register(instr.rt())),
             LoadStoreKind::Lb => self
                 .cpu
@@ -236,8 +237,7 @@ impl<M: crate::Memory> Ops for Interpreter<'_, M> {
             }
             LoadStoreKind::Swl => {
                 let count = (va & 3) as usize + 1;
-                self.mmio
-                    .write(va & !3, &rt.to_le_bytes()[4 - count..]);
+                self.mmio.write(va & !3, &rt.to_le_bytes()[4 - count..]);
             }
             LoadStoreKind::Swr => {
                 let count = 4 - (va & 3) as usize;
