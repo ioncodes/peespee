@@ -1,5 +1,5 @@
 const SCE_KERNEL_USER_HIGHEST_PRIORITY: u8 = 16;
-const SCE_KERNEL_USER_LOWEST_PRIORITY: u8 = 0;
+const SCE_KERNEL_USER_LOWEST_PRIORITY: u8 = 111;
 
 pub(crate) struct ThreadManager {
     threads: Vec<Thread>,
@@ -22,7 +22,7 @@ impl ThreadManager {
     }
 
     pub(crate) fn schedule_next(&mut self) {
-        if let Some(next_thread) = self.threads.iter().max_by_key(|t| t.priority) {
+        if let Some(next_thread) = self.threads.iter().min_by_key(|t| t.priority) {
             self.current_thread = next_thread.clone();
             tracing::info!(thread = %self.current_thread.name, "scheduled next thread");
         }
@@ -45,4 +45,3 @@ impl Thread {
         Self { name, priority }
     }
 }
-

@@ -1,9 +1,9 @@
-pub mod psp;
-pub mod format;
-pub mod mmio;
 pub mod cpu;
+pub mod format;
 mod kernel;
+pub mod mmio;
+pub mod psp;
 
-pub use psp::Psp;
-pub use mmio::{Memory, Mmio};
 pub use cpu::Cpu;
+pub use mmio::{Memory, Mmio};
+pub use psp::Psp;

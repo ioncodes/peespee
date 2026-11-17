@@ -1,5 +1,7 @@
 pub mod addr;
 
+use std::collections::HashMap;
+
 use addr::Address;
 
 const SCRATCHPAD_SIZE: usize = 0x4000;
@@ -12,6 +14,7 @@ pub struct Mmio {
     video_memory: Vec<u8>,
     main_memory: Vec<u8>,
     exception_vectors: Vec<u8>,
+    io_readback: HashMap<u32, u8>,
 }
 
 impl Mmio {
@@ -21,6 +24,7 @@ impl Mmio {
             video_memory: vec![0; VIDEO_MEMORY_SIZE],
             main_memory: vec![0; MAIN_MEMORY_SIZE],
             exception_vectors: vec![0; EXCEPTION_VECTORS_SIZE],
+            io_readback: HashMap::new(),
         }
     }
 }
@@ -35,13 +39,9 @@ impl Memory for Mmio {
             0x0800_0000..=0x09ff_ffff => self.main_memory[(addr - 0x0800_0000) as usize],
             0x1fc0_0000..=0x1fcf_ffff => self.exception_vectors[(addr - 0x1fc0_0000) as usize],
             // MMIO
-            0x1c00_0000..=0x1fbf_ffff => {
+            0x1c00_0000..=0x1fbf_ffff | 0x1fd0_0000..=0x1fd0_ffff => {
                 tracing::error!("MMIO read8 at address {:08x}", addr);
-                0
-            }
-            0x1fd0_0000..=0x1fd0_ffff => {
-                tracing::error!("MMIO read8 at address {:08x}", addr);
-                0
+                self.io_readback.get(&addr).copied().unwrap_or(0)
             }
             _ => unreachable!("Invalid read8 address {:08x}", addr),
         }
@@ -58,11 +58,9 @@ impl Memory for Mmio {
                 self.exception_vectors[(addr - 0x1fc0_0000) as usize] = value
             }
             // MMIO
-            0x1c00_0000..=0x1fbf_ffff => {
-                tracing::error!("MMIO write8 at address {:08x}", addr);
-            }
-            0x1fd0_0000..=0x1fd0_ffff => {
-                tracing::error!("MMIO write8 at address {:08x}", addr);
+            0x1c00_0000..=0x1fbf_ffff | 0x1fd0_0000..=0x1fd0_ffff => {
+                tracing::error!("MMIO write8 at address {:08x} = {:02x}", addr, value);
+                self.io_readback.insert(addr, value);
             }
             _ => unreachable!("Invalid write8 address {:08x}", addr),
         }

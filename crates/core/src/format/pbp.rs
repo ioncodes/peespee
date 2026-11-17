@@ -9,7 +9,7 @@ impl<'a> Pbp<'a> {
         Self { buffer }
     }
 
-    pub fn prx(&self) -> Prx<'a> {
+    pub fn prx(&self) -> Prx {
         let start_addr = u32::from_le_bytes(
             self.buffer[0x20..0x24]
                 .try_into()
@@ -20,7 +20,7 @@ impl<'a> Pbp<'a> {
                 .try_into()
                 .expect("failed to read addr"),
         );
-        Prx::new(&self.buffer[start_addr as usize..end_addr as usize])
+        Prx::parse(&self.buffer[start_addr as usize..end_addr as usize])
             .expect("failed to create Prx")
     }
 }

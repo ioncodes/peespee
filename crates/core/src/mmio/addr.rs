@@ -1,3 +1,4 @@
+use std::fmt;
 use std::ops::Add;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -6,6 +7,12 @@ pub struct Address(pub u32);
 impl Address {
     pub const fn wrapping_add(self, offset: usize) -> Self {
         Self(self.0.wrapping_add(offset as u32))
+    }
+}
+
+impl fmt::Display for Address {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:#010X}", self.0)
     }
 }
 
