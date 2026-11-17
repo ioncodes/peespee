@@ -11,3 +11,6 @@ disasm = []
 chipi-macros = "1.1.0"
 goblin = { version = "0.10.7", default-features = false, features = ["std", "elf32", "elf64", "endian_fd"] }
 tracing = "0.1.44"
+
+[build-dependencies]
+heck = "0.5.0"

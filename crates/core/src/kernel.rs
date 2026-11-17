@@ -1,3 +1,4 @@
+mod nids;
 mod syscalls;
 mod threads;
 
@@ -10,7 +11,7 @@ pub(crate) const SYSCALL: u32 = 0x0000_000C;
 
 pub(crate) struct Kernel {
     pub(crate) threads: ThreadManager,
-    imports: Vec<(String, u32)>,
+    imports: Vec<u32>,
 }
 
 impl Kernel {
