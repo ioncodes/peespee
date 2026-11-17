@@ -36,7 +36,7 @@ impl Cpu {
     pub fn step(&mut self, memory: &mut impl crate::Memory) -> Outcome {
         let instr_pc = self.pc;
         let instr = memory.read32(instr_pc);
-        println!("[{:08x}] {}", self.pc, Instruction(instr));
+        //println!("[{:08x}] {}", self.pc, Instruction(instr));
 
         self.pc = self.next_pc;
         self.next_pc = self.next_pc.wrapping_add(4);
@@ -49,6 +49,10 @@ impl Cpu {
         };
         decoder::run_ops(&mut interpreter, instr);
         interpreter.outcome
+    }
+
+    pub fn pc(&self) -> u32 {
+        self.pc
     }
 
     pub fn set_pc(&mut self, pc: u32) {

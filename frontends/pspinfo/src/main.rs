@@ -6,10 +6,6 @@ fn main() {
     println!("Module: {}", prx.name);
     println!("Imports:");
     for import in &prx.imports {
-        println!(
-            "  {} {} syscalls",
-            import.library,
-            import.functions.len()
-        );
+        println!("  {} {} syscalls", import.library, import.functions.len());
     }
 }

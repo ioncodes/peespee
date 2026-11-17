@@ -28,7 +28,7 @@ impl Psp {
     }
 
     pub fn run(&mut self) {
-        while self.kernel.threads.has_threads() {
+        while self.kernel.threads.has_active_threads() {
             match self.cpu.step(&mut self.mmio) {
                 Outcome::Continue => {}
                 Outcome::Syscall(code) => {

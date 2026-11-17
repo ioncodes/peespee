@@ -9,6 +9,8 @@ const VIDEO_MEMORY_SIZE: usize = 0x20_0000;
 const MAIN_MEMORY_SIZE: usize = 0x200_0000;
 const EXCEPTION_VECTORS_SIZE: usize = 0x10_0000;
 
+pub const VRAM_ADDR: u32 = 0x0400_0000;
+
 pub struct Mmio {
     scratchpad: Vec<u8>,
     video_memory: Vec<u8>,

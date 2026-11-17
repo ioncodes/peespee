@@ -31,16 +31,35 @@ impl Kernel {
         }
 
         let nid = self.imports[(syscall - IMPORT_SYSCALL_BASE) as usize];
-        let mut syscall = Syscall { kernel: self, cpu, mmio };
-        
+        let mut syscall = Syscall {
+            kernel: self,
+            cpu,
+            mmio,
+        };
+
         match nid {
+            // threading
             SCE_KERNEL_CREATE_THREAD => syscall.create_thread(),
             SCE_KERNEL_START_THREAD => syscall.start_thread(),
-            
+            SCE_KERNEL_EXIT_DELETE_THREAD => syscall.exit_delete_thread(),
+            SCE_KERNEL_SLEEP_THREAD_CB => syscall.kernel_sleep_thread_callback(),
+
+            // callbacks
+            SCE_KERNEL_CREATE_CALLBACK => syscall.create_callback(),
+            SCE_KERNEL_REGISTER_EXIT_CALLBACK => syscall.register_exit_callback(),
+
+            // stdio
             SCE_KERNEL_STDIN => syscall.stdin(),
             SCE_KERNEL_STDOUT => syscall.stdout(),
             SCE_KERNEL_STDERR => syscall.stderr(),
-            
+
+            // ge
+            SCE_GE_EDRAM_GET_ADDR => syscall.get_edram_addr(),
+
+            // display
+            SCE_DISPLAY_SET_MODE => syscall.set_display_mode(),
+            SCE_DISPLAY_SET_FRAME_BUF => syscall.set_frame_buffer(),
+
             nid => {
                 let name = nids::name(nid).unwrap_or("???");
                 todo!("Unimplemented import {nid:08X} [{name}]")

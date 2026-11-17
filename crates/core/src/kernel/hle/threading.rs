@@ -8,8 +8,11 @@ const STACK_ALIGNMENT: u32 = 16;
 
 impl<M: Memory> Syscall<'_, M> {
     pub fn create_thread(&mut self) {
-        let handle = self.kernel.threads.create_thread(
-            self.thread_name(),
+        let handle = self.kernel.allocate_handle();
+        let name = self.thread_name();
+        self.kernel.threads.create_thread(
+            handle,
+            name,
             self.arg(1),
             self.arg(2) as u8,
             self.arg(3),
@@ -25,7 +28,7 @@ impl<M: Memory> Syscall<'_, M> {
         let mut arguments = vec![0; arg_size as usize];
         self.mmio.read(arg_addr, &mut arguments);
 
-        let thread = self.kernel.threads.find_thread_mut(handle);
+        let thread = &mut self.kernel.threads[handle];
         let sp = (thread.context.registers[REG_SP as usize] - arg_size) & !(STACK_ALIGNMENT - 1);
         self.mmio.write(sp, &arguments);
 
@@ -36,6 +39,24 @@ impl<M: Memory> Syscall<'_, M> {
         tracing::info!(thread = %thread.name, "thread started");
 
         self.set_result(0);
+    }
+
+    pub fn exit_delete_thread(&mut self) {
+        self.kernel
+            .threads
+            .exit_current(self.arg(0) as i32, self.cpu);
+        self.set_result(0);
+    }
+
+    pub fn kernel_sleep_thread_callback(&mut self) {
+        self.set_result(0);
+
+        let handle = self.kernel.threads.current_thread;
+        let thread = &mut self.kernel.threads[handle];
+        thread.context.save(self.cpu);
+        thread.ready = false;
+
+        self.kernel.threads.schedule_next(self.cpu);
     }
 
     fn thread_name(&self) -> String {
