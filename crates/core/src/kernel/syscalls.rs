@@ -36,6 +36,11 @@ impl Kernel {
         match nid {
             SCE_KERNEL_CREATE_THREAD => syscall.create_thread(),
             SCE_KERNEL_START_THREAD => syscall.start_thread(),
+            
+            SCE_KERNEL_STDIN => syscall.stdin(),
+            SCE_KERNEL_STDOUT => syscall.stdout(),
+            SCE_KERNEL_STDERR => syscall.stderr(),
+            
             nid => {
                 let name = nids::name(nid).unwrap_or("???");
                 todo!("Unimplemented import {nid:08X} [{name}]")
