@@ -152,15 +152,19 @@ impl Prx {
         })
     }
 
-    pub fn load_base(&self, requested: Address) -> Address {
+    pub fn load_base(&self, requested: impl Into<Address>) -> Address {
         if self.relocatable {
-            requested
+            requested.into()
         } else {
             Address(0)
         }
     }
 
-    pub fn load_into(&self, memory: &mut impl Memory, requested_base: Address) -> Address {
+    pub fn load_into(
+        &self,
+        memory: &mut impl Memory,
+        requested_base: impl Into<Address>,
+    ) -> Address {
         let base = self.load_base(requested_base);
         for segment in &self.segments {
             let address = base + Address(segment.address);

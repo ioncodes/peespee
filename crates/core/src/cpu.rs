@@ -3,6 +3,8 @@ mod interpreter;
 
 use crate::cpu::{decoder::Instruction, interpreter::Interpreter};
 
+pub const REG_A0: u8 = 4;
+pub const REG_A1: u8 = 5;
 pub const REG_SP: u8 = 29;
 pub const REG_RA: u8 = 31;
 
@@ -33,7 +35,7 @@ impl Cpu {
     #[inline(always)]
     pub fn step(&mut self, memory: &mut impl crate::Memory) -> Outcome {
         let instr_pc = self.pc;
-        let instr = memory.read32(instr_pc.into());
+        let instr = memory.read32(instr_pc);
         println!("[{:08x}] {}", self.pc, Instruction(instr));
 
         self.pc = self.next_pc;
@@ -47,6 +49,11 @@ impl Cpu {
         };
         decoder::run_ops(&mut interpreter, instr);
         interpreter.outcome
+    }
+
+    pub fn set_pc(&mut self, pc: u32) {
+        self.pc = pc;
+        self.next_pc = pc.wrapping_add(4);
     }
 
     pub fn register(&self, index: u8) -> u32 {

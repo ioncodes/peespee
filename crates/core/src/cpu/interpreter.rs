@@ -202,49 +202,49 @@ impl<M: crate::Memory> Ops for Interpreter<'_, M> {
         match op {
             LoadStoreKind::Sb => self
                 .mmio
-                .write8(va.into(), self.cpu.register(instr.rt()) as u8),
+                .write8(va, self.cpu.register(instr.rt()) as u8),
             LoadStoreKind::Sh => self
                 .mmio
-                .write16(va.into(), self.cpu.register(instr.rt()) as u16),
+                .write16(va, self.cpu.register(instr.rt()) as u16),
             LoadStoreKind::Sw => self.mmio.write32(va, self.cpu.register(instr.rt())),
             LoadStoreKind::Lb => self
                 .cpu
-                .set_register(instr.rt(), self.mmio.read8(va.into()) as i8 as i32 as u32),
+                .set_register(instr.rt(), self.mmio.read8(va) as i8 as i32 as u32),
             LoadStoreKind::Lh => self
                 .cpu
-                .set_register(instr.rt(), self.mmio.read16(va.into()) as i16 as i32 as u32),
+                .set_register(instr.rt(), self.mmio.read16(va) as i16 as i32 as u32),
             LoadStoreKind::Lw => self
                 .cpu
-                .set_register(instr.rt(), self.mmio.read32(va.into()) as u32),
+                .set_register(instr.rt(), self.mmio.read32(va) as u32),
             LoadStoreKind::Lwl => {
                 let count = (va & 3) as usize + 1;
                 let mut bytes = rt.to_le_bytes();
-                self.mmio.read((va & !3).into(), &mut bytes[4 - count..]);
+                self.mmio.read(va & !3, &mut bytes[4 - count..]);
                 self.cpu.set_register(instr.rt(), u32::from_le_bytes(bytes));
             }
             LoadStoreKind::Lbu => self
                 .cpu
-                .set_register(instr.rt(), u32::from(self.mmio.read8(va.into()))),
+                .set_register(instr.rt(), u32::from(self.mmio.read8(va))),
             LoadStoreKind::Lhu => self
                 .cpu
-                .set_register(instr.rt(), u32::from(self.mmio.read16(va.into()))),
+                .set_register(instr.rt(), u32::from(self.mmio.read16(va))),
             LoadStoreKind::Lwr => {
                 let count = 4 - (va & 3) as usize;
                 let mut bytes = rt.to_le_bytes();
-                self.mmio.read(va.into(), &mut bytes[..count]);
+                self.mmio.read(va, &mut bytes[..count]);
                 self.cpu.set_register(instr.rt(), u32::from_le_bytes(bytes));
             }
             LoadStoreKind::Swl => {
                 let count = (va & 3) as usize + 1;
                 self.mmio
-                    .write((va & !3).into(), &rt.to_le_bytes()[4 - count..]);
+                    .write(va & !3, &rt.to_le_bytes()[4 - count..]);
             }
             LoadStoreKind::Swr => {
                 let count = 4 - (va & 3) as usize;
-                self.mmio.write(va.into(), &rt.to_le_bytes()[..count]);
+                self.mmio.write(va, &rt.to_le_bytes()[..count]);
             }
             LoadStoreKind::Ll => {
-                let value = self.mmio.read32(va.into());
+                let value = self.mmio.read32(va);
                 self.cpu.set_register(instr.rt(), value);
                 self.cpu.ll_bit = true;
             }

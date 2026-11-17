@@ -30,8 +30,8 @@ impl Mmio {
 }
 
 impl Memory for Mmio {
-    fn read8(&self, addr: Address) -> u8 {
-        let addr = u32::from(addr) & 0x3fff_ffff;
+    fn read8(&self, addr: impl Into<Address>) -> u8 {
+        let addr = u32::from(addr.into()) & 0x3fff_ffff;
         match addr {
             // Normal memory stuff
             0x0001_0000..=0x0001_3fff => self.scratchpad[(addr - 0x0001_0000) as usize],
@@ -47,8 +47,8 @@ impl Memory for Mmio {
         }
     }
 
-    fn write8(&mut self, addr: Address, value: u8) {
-        let addr = u32::from(addr) & 0x3fff_ffff;
+    fn write8(&mut self, addr: impl Into<Address>, value: u8) {
+        let addr = u32::from(addr.into()) & 0x3fff_ffff;
         match addr {
             // Normal memory stuff
             0x0001_0000..=0x0001_3fff => self.scratchpad[(addr - 0x0001_0000) as usize] = value,
@@ -68,23 +68,26 @@ impl Memory for Mmio {
 }
 
 pub trait Memory {
-    fn read8(&self, addr: Address) -> u8;
-    fn write8(&mut self, addr: Address, value: u8);
+    fn read8(&self, addr: impl Into<Address>) -> u8;
+    fn write8(&mut self, addr: impl Into<Address>, value: u8);
 
-    fn read16(&self, addr: Address) -> u16 {
+    fn read16(&self, addr: impl Into<Address>) -> u16 {
+        let addr = addr.into();
         let low = self.read8(addr) as u16;
         let high = self.read8(addr.wrapping_add(1)) as u16;
         (high << 8) | low
     }
 
-    fn write16(&mut self, addr: Address, value: u16) {
+    fn write16(&mut self, addr: impl Into<Address>, value: u16) {
+        let addr = addr.into();
         let low = (value & 0xff) as u8;
         let high = (value >> 8) as u8;
         self.write8(addr, low);
         self.write8(addr.wrapping_add(1), high);
     }
 
-    fn read32(&self, addr: Address) -> u32 {
+    fn read32(&self, addr: impl Into<Address>) -> u32 {
+        let addr = addr.into();
         let b0 = self.read8(addr) as u32;
         let b1 = self.read8(addr.wrapping_add(1)) as u32;
         let b2 = self.read8(addr.wrapping_add(2)) as u32;
@@ -104,19 +107,22 @@ pub trait Memory {
         self.write8(addr.wrapping_add(3), b3);
     }
 
-    fn read(&self, addr: Address, buffer: &mut [u8]) {
+    fn read(&self, addr: impl Into<Address>, buffer: &mut [u8]) {
+        let addr = addr.into();
         for (offset, byte) in buffer.iter_mut().enumerate() {
             *byte = self.read8(addr.wrapping_add(offset));
         }
     }
 
-    fn write(&mut self, addr: Address, buffer: &[u8]) {
+    fn write(&mut self, addr: impl Into<Address>, buffer: &[u8]) {
+        let addr = addr.into();
         for (offset, byte) in buffer.iter().copied().enumerate() {
             self.write8(addr.wrapping_add(offset), byte);
         }
     }
 
-    fn fill(&mut self, addr: Address, size: usize, value: u8) {
+    fn fill(&mut self, addr: impl Into<Address>, size: usize, value: u8) {
+        let addr = addr.into();
         for offset in 0..size {
             self.write8(addr.wrapping_add(offset), value);
         }
