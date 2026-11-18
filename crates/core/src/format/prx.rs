@@ -4,7 +4,7 @@ use goblin::elf::{
     Elf,
     header::ET_EXEC,
     program_header::PT_LOAD,
-    reloc::{R_MIPS_26, R_MIPS_NONE},
+    reloc::{R_MIPS_26, R_MIPS_32, R_MIPS_HI16, R_MIPS_LO16, R_MIPS_NONE},
     section_header::SHT_LOPROC,
 };
 use goblin::error::Error;
@@ -20,6 +20,7 @@ const IMPORT_ENTRY_SIZE: usize = 0x14;
 const RELOCATION_SIZE: usize = 8;
 const STUB_SIZE: u32 = 8;
 const JUMP_TARGET_MASK: u32 = 0x03FF_FFFF;
+const IMMEDIATE_MASK: u32 = 0xFFFF;
 
 pub struct Prx {
     pub name: String,
@@ -177,11 +178,15 @@ impl Prx {
         }
 
         if self.relocatable {
-            for relocation in &self.relocations {
+            for (index, relocation) in self.relocations.iter().enumerate() {
                 let address = base + Address(relocation.address);
                 let target_base = u32::from(base + Address(relocation.target_base));
                 match relocation.kind as u32 {
                     R_MIPS_NONE => {}
+                    R_MIPS_32 => {
+                        let value = memory.read32(address);
+                        memory.write32(address, value.wrapping_add(target_base));
+                    }
                     R_MIPS_26 => {
                         let instruction = memory.read32(address);
                         let target =
@@ -190,6 +195,28 @@ impl Prx {
                             address,
                             (instruction & !JUMP_TARGET_MASK) | (target & JUMP_TARGET_MASK),
                         );
+                    }
+                    R_MIPS_HI16 => {
+                        let low_relocation = self.relocations[index + 1..]
+                            .iter()
+                            .find(|r| r.kind as u32 == R_MIPS_LO16)
+                            .unwrap();
+                        let low =
+                            memory.read32(base + Address(low_relocation.address)) as i16 as u32;
+
+                        let instruction = memory.read32(address);
+                        let full = (instruction << 16)
+                            .wrapping_add(low)
+                            .wrapping_add(target_base);
+                        memory.write32(
+                            address,
+                            (instruction & !IMMEDIATE_MASK) | (full.wrapping_add(0x8000) >> 16),
+                        );
+                    }
+                    R_MIPS_LO16 => {
+                        let instruction = memory.read32(address);
+                        let low = instruction.wrapping_add(target_base) & IMMEDIATE_MASK;
+                        memory.write32(address, (instruction & !IMMEDIATE_MASK) | low);
                     }
                     kind => unimplemented!("relocation type {kind} at {address}"),
                 }
