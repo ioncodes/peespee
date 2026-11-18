@@ -1,5 +1,3 @@
-use std::ffi::CStr;
-
 use crate::Memory;
 use crate::cpu::{REG_A0, REG_A1, REG_SP};
 use crate::kernel::Syscall;
@@ -9,7 +7,7 @@ const STACK_ALIGNMENT: u32 = 16;
 impl<M: Memory> Syscall<'_, M> {
     pub fn create_thread(&mut self) {
         let handle = self.kernel.allocate_handle();
-        let name = self.thread_name();
+        let name = self.arg_as_str(0);
         self.kernel.threads.create_thread(
             handle,
             name,
@@ -57,15 +55,5 @@ impl<M: Memory> Syscall<'_, M> {
         thread.ready = false;
 
         self.kernel.threads.schedule_next(self.cpu);
-    }
-
-    fn thread_name(&self) -> String {
-        let mut buffer = [0u8; 16];
-        self.mmio.read(self.arg(0), &mut buffer);
-        CStr::from_bytes_until_nul(&buffer)
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .to_owned()
     }
 }

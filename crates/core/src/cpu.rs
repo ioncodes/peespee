@@ -16,7 +16,9 @@ pub enum Outcome {
 }
 
 pub struct Cpu {
-    registers: [u32; 32],
+    gprs: [u32; 32],
+    hi: u32,
+    lo: u32,
     pc: u32,
     ll_bit: bool, // for LL and SC
     pub(crate) next_pc: u32,
@@ -25,9 +27,11 @@ pub struct Cpu {
 impl Cpu {
     pub fn new(pc: u32) -> Self {
         Self {
-            registers: [0; 32],
+            gprs: [0; 32],
             pc,
             next_pc: pc.wrapping_add(4),
+            hi: 0,
+            lo: 0,
             ll_bit: false,
         }
     }
@@ -61,12 +65,12 @@ impl Cpu {
     }
 
     pub fn register(&self, index: u8) -> u32 {
-        self.registers[index as usize]
+        self.gprs[index as usize]
     }
 
     pub fn set_register(&mut self, index: u8, value: u32) {
         if index != 0 {
-            self.registers[index as usize] = value;
+            self.gprs[index as usize] = value;
         }
     }
 }

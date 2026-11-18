@@ -1,3 +1,5 @@
+use std::ffi::CStr;
+
 use crate::format::Prx;
 use crate::mmio::addr::Address;
 use crate::{Cpu, Display, Memory};
@@ -17,6 +19,16 @@ pub(crate) struct Syscall<'a, M: Memory> {
 impl<M: Memory> Syscall<'_, M> {
     pub fn arg(&self, index: u8) -> u32 {
         self.cpu.register(4 + index)
+    }
+
+    pub fn arg_as_str(&self, index: u8) -> String {
+        let mut buffer = [0u8; 64]; // TODO: what's a universally good size? should we just read until null?
+        self.mmio.read(self.arg(index), &mut buffer);
+        CStr::from_bytes_until_nul(&buffer)
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned()
     }
 
     pub fn set_result(&mut self, value: u32) {
@@ -40,6 +52,10 @@ impl<M: Memory> Syscall<'_, M> {
             // callbacks
             SCE_KERNEL_CREATE_CALLBACK => self.create_callback(),
             SCE_KERNEL_REGISTER_EXIT_CALLBACK => self.register_exit_callback(),
+
+            // mutex
+            SCE_KERNEL_CREATE_LW_MUTEX => self.create_user_mutex(),
+            SCE_KERNEL_CREATE_SEMA => self.create_semaphore(),
 
             // stdio
             SCE_KERNEL_STDIN => self.stdin(),

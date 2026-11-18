@@ -124,7 +124,65 @@ impl<M: crate::Memory> Ops for Interpreter<'_, M> {
     }
 
     fn muldiv(&mut self, op: MuldivKind, instr: Instruction) {
-        todo!("{op:?} ({:08x})", instr.0)
+        let rs = self.cpu.register(instr.rs());
+        let rt = self.cpu.register(instr.rt());
+
+        match op {
+            MuldivKind::Mult => {
+                let result = (rs as i32 as i64 * rt as i32 as i64) as u64;
+                self.cpu.hi = (result >> 32) as u32;
+                self.cpu.lo = result as u32;
+            }
+            MuldivKind::Multu => {
+                let result = rs as u64 * rt as u64;
+                self.cpu.hi = (result >> 32) as u32;
+                self.cpu.lo = result as u32;
+            }
+            MuldivKind::Div => {
+                if rt != 0 {
+                    self.cpu.lo = (rs as i32).wrapping_div(rt as i32) as u32;
+                    self.cpu.hi = (rs as i32).wrapping_rem(rt as i32) as u32;
+                }
+            }
+            MuldivKind::Divu => {
+                if rt != 0 {
+                    self.cpu.lo = rs / rt;
+                    self.cpu.hi = rs % rt;
+                }
+            }
+            MuldivKind::Madd => {
+                let result = (self.cpu.hi as u64) << 32 | self.cpu.lo as u64;
+                let addend = (rs as i32 as i64 * rt as i32 as i64) as u64;
+                let result = result.wrapping_add(addend);
+                self.cpu.hi = (result >> 32) as u32;
+                self.cpu.lo = result as u32;
+            }
+            MuldivKind::Maddu => {
+                let result = (self.cpu.hi as u64) << 32 | self.cpu.lo as u64;
+                let addend = rs as u64 * rt as u64;
+                let result = result.wrapping_add(addend);
+                self.cpu.hi = (result >> 32) as u32;
+                self.cpu.lo = result as u32;
+            }
+            MuldivKind::Msub => {
+                let result = (self.cpu.hi as u64) << 32 | self.cpu.lo as u64;
+                let subtrahend = (rs as i32 as i64 * rt as i32 as i64) as u64;
+                let result = result.wrapping_sub(subtrahend);
+                self.cpu.hi = (result >> 32) as u32;
+                self.cpu.lo = result as u32;
+            }
+            MuldivKind::Msubu => {
+                let result = (self.cpu.hi as u64) << 32 | self.cpu.lo as u64;
+                let subtrahend = rs as u64 * rt as u64;
+                let result = result.wrapping_sub(subtrahend);
+                self.cpu.hi = (result >> 32) as u32;
+                self.cpu.lo = result as u32;
+            }
+            MuldivKind::Mfhi => self.cpu.set_register(instr.rd(), self.cpu.hi),
+            MuldivKind::Mthi => self.cpu.hi = self.cpu.register(instr.rs()),
+            MuldivKind::Mflo => self.cpu.set_register(instr.rd(), self.cpu.lo),
+            MuldivKind::Mtlo => self.cpu.lo = self.cpu.register(instr.rs()),
+        }
     }
 
     fn branch(&mut self, op: BranchKind, instr: Instruction) {
@@ -258,7 +316,46 @@ impl<M: crate::Memory> Ops for Interpreter<'_, M> {
     }
 
     fn bitfield(&mut self, op: BitfieldKind, instr: Instruction) {
-        todo!("{op:?} ({:08x})", instr.0)
+        match op {
+            BitfieldKind::Ext => {
+                let value = self.cpu.register(instr.rs());
+                self.cpu
+                    .set_register(instr.rt(), (value >> instr.pos()) & instr.ext_mask())
+            }
+            BitfieldKind::Ins => {
+                let value = self.cpu.register(instr.rs());
+                let target = self.cpu.register(instr.rt());
+                let mask = instr.ins_mask();
+                self.cpu.set_register(
+                    instr.rt(),
+                    (target & !mask) | ((value << instr.pos()) & mask),
+                )
+            }
+            BitfieldKind::Seb => {
+                let value = self.cpu.register(instr.rt());
+                self.cpu.set_register(instr.rd(), value as i8 as i32 as u32)
+            }
+            BitfieldKind::Seh => {
+                let value = self.cpu.register(instr.rt());
+                self.cpu
+                    .set_register(instr.rd(), value as i16 as i32 as u32)
+            }
+            BitfieldKind::Wsbh => {
+                let value = self.cpu.register(instr.rt());
+                self.cpu.set_register(
+                    instr.rd(),
+                    ((value & 0x00FF_00FF) << 8) | ((value >> 8) & 0x00FF_00FF),
+                )
+            }
+            BitfieldKind::Wsbw => {
+                let value = self.cpu.register(instr.rt());
+                self.cpu.set_register(instr.rd(), value.swap_bytes())
+            }
+            BitfieldKind::Bitrev => {
+                let value = self.cpu.register(instr.rt());
+                self.cpu.set_register(instr.rd(), value.reverse_bits())
+            }
+        }
     }
 
     fn fpu(&mut self, op: FpuKind, instr: Instruction) {
