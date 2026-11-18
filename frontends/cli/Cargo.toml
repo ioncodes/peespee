@@ -5,4 +5,7 @@ edition = "2024"
 
 [dependencies]
 core = { path = "../../crates/core" }
+pollster = "1.0.2"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+wgpu = "30.0.2"
+winit = "0.30.13"

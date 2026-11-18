@@ -5,7 +5,7 @@ mod threads;
 
 use std::collections::BTreeMap;
 
-use syscalls::Syscall;
+pub(crate) use syscalls::Syscall;
 
 use threads::{Callback, ROOT_THREAD, ThreadManager};
 

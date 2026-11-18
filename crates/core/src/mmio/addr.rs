@@ -1,7 +1,7 @@
 use std::fmt;
 use std::ops::Add;
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Eq, Hash, PartialEq)]
 pub struct Address(pub u32);
 
 impl Address {
@@ -39,5 +39,11 @@ impl Add<Address> for Address {
 
     fn add(self, rhs: Address) -> Self::Output {
         Self(self.0 + rhs.0)
+    }
+}
+
+impl std::fmt::Debug for Address {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{:08X}", self.0)
     }
 }

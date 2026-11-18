@@ -1,3 +1,5 @@
+mod app;
+
 fn main() {
     tracing_subscriber::fmt()
         .without_time()
@@ -8,9 +10,12 @@ fn main() {
         .with_writer(std::io::stderr)
         .init();
 
-    let buffer =
-        std::fs::read("submodules/pspautotests/demos/HelloJpcsp.pbp").expect("Failed to read file");
+    let path = std::env::args().nth(1).expect("No path provided");
+    let buffer = std::fs::read(&path).expect("Failed to read file");
 
-    let mut psp = core::Psp::new(&buffer);
-    psp.run();
+    let event_loop = winit::event_loop::EventLoop::new().expect("Failed to create event loop");
+    event_loop.set_control_flow(winit::event_loop::ControlFlow::Poll);
+    event_loop
+        .run_app(&mut app::Emulator::new(&buffer))
+        .expect("Event loop failed");
 }

@@ -1,16 +1,17 @@
 use crate::format::Prx;
 use crate::mmio::addr::Address;
-use crate::{Cpu, Memory};
+use crate::{Cpu, Display, Memory};
 
 use super::nids::{self, *};
 use super::{IMPORT_SYSCALL_BASE, Kernel, MODULE_RETURN_SYSCALL, SYSCALL};
 
 const JR_RA: u32 = 0x03E0_0008;
 
-pub(super) struct Syscall<'a, M: Memory> {
+pub(crate) struct Syscall<'a, M: Memory> {
     pub kernel: &'a mut Kernel,
     pub cpu: &'a mut Cpu,
     pub mmio: &'a mut M,
+    pub display: &'a mut Display,
 }
 
 impl<M: Memory> Syscall<'_, M> {
@@ -21,44 +22,36 @@ impl<M: Memory> Syscall<'_, M> {
     pub fn set_result(&mut self, value: u32) {
         self.cpu.set_register(2, value);
     }
-}
 
-impl Kernel {
-    pub(crate) fn dispatch(&mut self, syscall: u32, cpu: &mut Cpu, mmio: &mut impl Memory) {
-        if syscall == MODULE_RETURN_SYSCALL {
-            self.return_from_module(cpu, mmio);
+    pub(crate) fn dispatch(&mut self, code: u32) {
+        if code == MODULE_RETURN_SYSCALL {
+            self.return_from_module();
             return;
         }
 
-        let nid = self.imports[(syscall - IMPORT_SYSCALL_BASE) as usize];
-        let mut syscall = Syscall {
-            kernel: self,
-            cpu,
-            mmio,
-        };
-
+        let nid = self.kernel.imports[(code - IMPORT_SYSCALL_BASE) as usize];
         match nid {
             // threading
-            SCE_KERNEL_CREATE_THREAD => syscall.create_thread(),
-            SCE_KERNEL_START_THREAD => syscall.start_thread(),
-            SCE_KERNEL_EXIT_DELETE_THREAD => syscall.exit_delete_thread(),
-            SCE_KERNEL_SLEEP_THREAD_CB => syscall.kernel_sleep_thread_callback(),
+            SCE_KERNEL_CREATE_THREAD => self.create_thread(),
+            SCE_KERNEL_START_THREAD => self.start_thread(),
+            SCE_KERNEL_EXIT_DELETE_THREAD => self.exit_delete_thread(),
+            SCE_KERNEL_SLEEP_THREAD_CB => self.kernel_sleep_thread_callback(),
 
             // callbacks
-            SCE_KERNEL_CREATE_CALLBACK => syscall.create_callback(),
-            SCE_KERNEL_REGISTER_EXIT_CALLBACK => syscall.register_exit_callback(),
+            SCE_KERNEL_CREATE_CALLBACK => self.create_callback(),
+            SCE_KERNEL_REGISTER_EXIT_CALLBACK => self.register_exit_callback(),
 
             // stdio
-            SCE_KERNEL_STDIN => syscall.stdin(),
-            SCE_KERNEL_STDOUT => syscall.stdout(),
-            SCE_KERNEL_STDERR => syscall.stderr(),
+            SCE_KERNEL_STDIN => self.stdin(),
+            SCE_KERNEL_STDOUT => self.stdout(),
+            SCE_KERNEL_STDERR => self.stderr(),
 
             // ge
-            SCE_GE_EDRAM_GET_ADDR => syscall.get_edram_addr(),
+            SCE_GE_EDRAM_GET_ADDR => self.get_edram_addr(),
 
             // display
-            SCE_DISPLAY_SET_MODE => syscall.set_display_mode(),
-            SCE_DISPLAY_SET_FRAME_BUF => syscall.set_frame_buffer(),
+            SCE_DISPLAY_SET_MODE => self.set_display_mode(),
+            SCE_DISPLAY_SET_FRAME_BUF => self.set_frame_buffer(),
 
             nid => {
                 let name = nids::name(nid).unwrap_or("???");
@@ -67,6 +60,15 @@ impl Kernel {
         }
     }
 
+    fn return_from_module(&mut self) {
+        // The module entry point returns its status in $v0.
+        self.kernel
+            .threads
+            .exit_current(self.cpu.register(2) as i32, self.cpu);
+    }
+}
+
+impl Kernel {
     pub(crate) fn link_imports(
         &mut self,
         prx: &Prx,
@@ -84,10 +86,5 @@ impl Kernel {
                 memory.write32(stub.wrapping_add(4), (code << 6) | SYSCALL);
             }
         }
-    }
-
-    fn return_from_module(&mut self, cpu: &mut Cpu, _mmio: &mut impl Memory) {
-        // The module entry point returns its status in $v0.
-        self.threads.exit_current(cpu.register(2) as i32, cpu);
     }
 }
