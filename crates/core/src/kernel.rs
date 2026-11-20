@@ -1,4 +1,5 @@
 mod hle;
+mod memory;
 mod nids;
 mod syscalls;
 mod threads;
@@ -7,6 +8,7 @@ use std::collections::BTreeMap;
 
 pub(crate) use syscalls::Syscall;
 
+use memory::MemoryManager;
 use threads::{Callback, ROOT_THREAD, ThreadManager};
 
 pub(crate) const INITIAL_SP: u32 = 0x09FF_FE90;
@@ -19,6 +21,7 @@ pub(crate) const SYSCALL: u32 = 0x0000_000C;
 
 pub(crate) struct Kernel {
     pub(crate) threads: ThreadManager,
+    memory: MemoryManager,
     callbacks: BTreeMap<u32, Callback>,
     exit_callback: Option<u32>,
     imports: Vec<u32>,
@@ -29,6 +32,7 @@ impl Kernel {
     pub(crate) fn new() -> Self {
         Self {
             threads: ThreadManager::new(),
+            memory: MemoryManager::new(),
             callbacks: BTreeMap::new(),
             exit_callback: None,
             imports: Vec::new(),

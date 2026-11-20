@@ -1,5 +1,5 @@
 use crate::Memory;
-use crate::cpu::{REG_A0, REG_A1, REG_SP};
+use crate::cpu::{REG_A0, REG_A1, REG_GP, REG_SP};
 use crate::kernel::Syscall;
 
 const STACK_ALIGNMENT: u32 = 16;
@@ -14,6 +14,7 @@ impl<M: Memory> Syscall<'_, M> {
             self.arg(1),
             self.arg(2) as u8,
             self.arg(3),
+            self.cpu.register(REG_GP),
         );
         self.set_result(handle);
     }
@@ -55,5 +56,14 @@ impl<M: Memory> Syscall<'_, M> {
         thread.ready = false;
 
         self.kernel.threads.schedule_next(self.cpu);
+    }
+
+    pub fn get_thread_id(&mut self) {
+        self.set_result(self.kernel.threads.current_thread);
+    }
+
+    pub fn refer_thread_status(&mut self) {
+        // TODO: write SceKernelThreadInfo of thread arg0 to arg1
+        self.set_result(0);
     }
 }

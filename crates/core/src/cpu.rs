@@ -5,6 +5,7 @@ use crate::cpu::{decoder::Instruction, interpreter::Interpreter};
 
 pub const REG_A0: u8 = 4;
 pub const REG_A1: u8 = 5;
+pub const REG_GP: u8 = 28;
 pub const REG_SP: u8 = 29;
 pub const REG_RA: u8 = 31;
 

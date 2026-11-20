@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::ops::{Index, IndexMut};
 
 use crate::Cpu;
-use crate::cpu::{REG_RA, REG_SP};
+use crate::cpu::{REG_GP, REG_RA, REG_SP};
 
 use super::MODULE_RETURN_STUB;
 
@@ -34,8 +34,10 @@ impl ThreadManager {
         addr: u32,
         priority: u8,
         stack_size: u32,
+        gp: u32,
     ) {
         let mut thread = Thread::new(handle, name, addr, priority);
+        thread.context.registers[REG_GP as usize] = gp;
         thread.context.registers[REG_SP as usize] = self.next_stack;
         thread.context.registers[REG_RA as usize] = MODULE_RETURN_STUB;
         self.next_stack -= stack_size;
@@ -88,7 +90,7 @@ pub struct Thread {
 
 impl Thread {
     pub fn new(handle: u32, name: String, addr: u32, priority: u8) -> Self {
-        tracing::info!(name = %name, addr = format!("{:08x}", addr), priority, "thread created");
+        tracing::info!(name = %name, addr = format_args!("{:08x}", addr), priority, "thread created");
         Self {
             handle,
             name,

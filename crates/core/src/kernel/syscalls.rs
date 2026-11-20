@@ -48,10 +48,16 @@ impl<M: Memory> Syscall<'_, M> {
             SCE_KERNEL_START_THREAD => self.start_thread(),
             SCE_KERNEL_EXIT_DELETE_THREAD => self.exit_delete_thread(),
             SCE_KERNEL_SLEEP_THREAD_CB => self.kernel_sleep_thread_callback(),
+            SCE_KERNEL_GET_THREAD_ID => self.get_thread_id(),
+            SCE_KERNEL_REFER_THREAD_STATUS => self.refer_thread_status(),
 
             // callbacks
             SCE_KERNEL_CREATE_CALLBACK => self.create_callback(),
             SCE_KERNEL_REGISTER_EXIT_CALLBACK => self.register_exit_callback(),
+
+            // alloc
+            SCE_KERNEL_ALLOC_PARTITION_MEMORY => self.alloc_partition_memory(),
+            SCE_KERNEL_GET_BLOCK_HEAD_ADDR => self.get_block_address(),
 
             // mutex
             SCE_KERNEL_CREATE_LW_MUTEX => self.create_user_mutex(),
@@ -62,6 +68,12 @@ impl<M: Memory> Syscall<'_, M> {
             SCE_KERNEL_STDOUT => self.stdout(),
             SCE_KERNEL_STDERR => self.stderr(),
 
+            // device io
+            SCE_IO_DEVCTL => self.device_control(),
+
+            // general io
+            SCE_IO_WRITE => self.write_io(),
+
             // ge
             SCE_GE_EDRAM_GET_ADDR => self.get_edram_addr(),
 
@@ -69,9 +81,13 @@ impl<M: Memory> Syscall<'_, M> {
             SCE_DISPLAY_SET_MODE => self.set_display_mode(),
             SCE_DISPLAY_SET_FRAME_BUF => self.set_frame_buffer(),
 
+            // util
+            SCE_UTILITY_GET_SYSTEM_PARAM_INT => self.get_system_parameter(),
+
             nid => {
                 let name = nids::name(nid).unwrap_or("???");
-                todo!("Unimplemented import {nid:08X} [{name}]")
+                tracing::error!("Unimplemented import {nid:08X} [{name}]");
+                self.set_result(0);
             }
         }
     }

@@ -10,6 +10,7 @@ const MAIN_MEMORY_SIZE: usize = 0x200_0000;
 const EXCEPTION_VECTORS_SIZE: usize = 0x10_0000;
 
 pub const VRAM_ADDR: u32 = 0x0400_0000;
+pub const MAIN_MEMORY_ADDR: u32 = 0x0800_0000;
 
 pub struct Mmio {
     scratchpad: Vec<u8>,

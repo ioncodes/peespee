@@ -1,8 +1,9 @@
-use crate::cpu::{Outcome, REG_RA, REG_SP};
+use crate::cpu::{Outcome, REG_GP, REG_RA, REG_SP};
 use crate::format;
 use crate::kernel::{
     INITIAL_SP, Kernel, MODULE_RETURN_STUB, MODULE_RETURN_SYSCALL, SYSCALL, Syscall,
 };
+use crate::mmio::addr::Address;
 use crate::{Cpu, Display, Ge, Memory, Mmio};
 
 const INSTRUCTIONS_PER_FRAME: u32 = 333_000_000 / 60;
@@ -23,10 +24,12 @@ impl Psp {
         let prx = format::executable(buffer);
         let base = prx.load_base(0x0880_4000);
         let pc = prx.load_into(&mut mmio, base);
+        let gp = base + Address(prx.gp);
         kernel.link_imports(&prx, base, &mut mmio);
 
         // Return from the module entry point through an internal kernel syscall.
         let mut cpu = Cpu::new(pc.into());
+        cpu.set_register(REG_GP, gp.into());
         cpu.set_register(REG_SP, INITIAL_SP);
         cpu.set_register(REG_RA, MODULE_RETURN_STUB);
         mmio.write32(MODULE_RETURN_STUB, (MODULE_RETURN_SYSCALL << 6) | SYSCALL);
