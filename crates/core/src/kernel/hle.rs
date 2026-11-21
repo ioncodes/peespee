@@ -1,10 +1,9 @@
 pub(crate) mod alloc;
 pub(crate) mod callbacks;
-pub(crate) mod devio;
 pub(crate) mod display;
 pub(crate) mod ge;
+pub(crate) mod io;
 pub(crate) mod stdio;
 pub(crate) mod sync;
 pub(crate) mod threading;
 pub(crate) mod util;
-pub(crate) mod io;

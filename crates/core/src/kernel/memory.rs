@@ -26,6 +26,10 @@ impl MemoryManager {
         self.next_address = addr.wrapping_add(size);
     }
 
+    pub(crate) fn free(&mut self, handle: u32) {
+        self.blocks.remove(&handle);
+    }
+
     pub(crate) fn address_of(&self, handle: u32) -> Address {
         self.blocks[&handle]
     }

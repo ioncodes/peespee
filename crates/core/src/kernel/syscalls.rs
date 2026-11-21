@@ -57,22 +57,27 @@ impl<M: Memory> Syscall<'_, M> {
 
             // alloc
             SCE_KERNEL_ALLOC_PARTITION_MEMORY => self.alloc_partition_memory(),
+            SCE_KERNEL_FREE_PARTITION_MEMORY => self.free_partition_memory(),
             SCE_KERNEL_GET_BLOCK_HEAD_ADDR => self.get_block_address(),
 
             // mutex
             SCE_KERNEL_CREATE_LW_MUTEX => self.create_user_mutex(),
+            SCE_KERNEL_LOCK_LW_MUTEX => self.lock_user_mutex(),
+            SCE_KERNEL_UNLOCK_LW_MUTEX => self.unlock_user_mutex(),
+            SCE_KERNEL_DELETE_LW_MUTEX => self.delete_user_mutex(),
             SCE_KERNEL_CREATE_SEMA => self.create_semaphore(),
+            SCE_KERNEL_WAIT_SEMA => self.wait_semaphore(),
+            SCE_KERNEL_SIGNAL_SEMA => self.signal_semaphore(),
 
             // stdio
             SCE_KERNEL_STDIN => self.stdin(),
             SCE_KERNEL_STDOUT => self.stdout(),
             SCE_KERNEL_STDERR => self.stderr(),
 
-            // device io
-            SCE_IO_DEVCTL => self.device_control(),
-
-            // general io
+            // io
             SCE_IO_WRITE => self.write_io(),
+            SCE_IO_OPEN => self.open_io(),
+            SCE_IO_DEVCTL => self.device_control(),
 
             // ge
             SCE_GE_EDRAM_GET_ADDR => self.get_edram_addr(),
